@@ -35,7 +35,7 @@ public static class LoginReport
         {
             var parser = iinact.Loaded ? (iinact.Healthy ? "healthy" : "unwell") : iinact.Status;
             var suffix = waitedOut ? $" (still not ready after {HealthWaitSeconds:F0} s)" : "";
-            parts.Add($"IINACT {parser} | Browsingway {browsingway.Status}{suffix}; use /overlays fix");
+            parts.Add($"IINACT {parser} | Browsingway {browsingway.Status}{suffix}; use /doctor fix");
         }
         parts.AddRange(attention);
         var line = "XIV Doctor: attention. " + string.Join(" ", parts.Select(p => p.TrimEnd('.') + "."));

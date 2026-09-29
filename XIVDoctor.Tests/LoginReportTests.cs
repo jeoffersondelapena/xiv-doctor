@@ -39,7 +39,7 @@ public class LoginReportTests
         var line = LoginReport.Line(new Report(true, false, "stalled"), Fine, new List<string>());
         Assert.StartsWith("XIV Doctor: attention.", line);
         Assert.Contains("IINACT unwell", line);
-        Assert.Contains("/overlays fix", line);
+        Assert.Contains("/doctor fix", line);
         Assert.Contains("IINACT not loaded", LoginReport.Line(Report.Absent("not loaded"), Fine, new List<string>()));
     }
 
@@ -48,7 +48,7 @@ public class LoginReportTests
     {
         var line = LoginReport.Line(Parser, new Report(true, false, "renderer starting on port 10501"), new List<string>(), waitedOut: true);
         Assert.Contains("still not ready after 90 s", line);
-        Assert.Contains("use /overlays fix", line);
+        Assert.Contains("use /doctor fix", line);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class LoginReportTests
         var line = LoginReport.Line(Parser, Fine, new List<string> { "IINACT: upstream sync needs a hand (run 42 failed)" });
         Assert.StartsWith("XIV Doctor: attention.", line);
         Assert.Contains("run 42 failed", line);
-        Assert.DoesNotContain("/overlays fix", line);
+        Assert.DoesNotContain("/doctor fix", line);
     }
 
     [Fact]

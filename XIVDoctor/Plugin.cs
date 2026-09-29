@@ -9,7 +9,6 @@ namespace XIVDoctor;
 public sealed class Plugin : IDalamudPlugin
 {
     private const string Command = "/doctor";
-    private const string OldCommand = "/overlays";
     private const string Reason = "requested by XIV Doctor";
 
     private readonly IDalamudPluginInterface pluginInterface;
@@ -63,7 +62,6 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "status: how the parser and the renderer are; fix: restart or load whatever is unwell; ack: clear the watchers' notes",
         });
-        commands.AddHandler(OldCommand, new CommandInfo(OnCommand) { HelpMessage = "the old name of /doctor", ShowInHelp = false });
     }
 
     public void Dispose()
@@ -72,7 +70,6 @@ public sealed class Plugin : IDalamudPlugin
         clientState.TerritoryChanged -= OnTerritoryChanged;
         framework.Update -= OnUpdate;
         commands.RemoveHandler(Command);
-        commands.RemoveHandler(OldCommand);
         diag?.Write("unloading");
         diag?.Dispose();
     }
@@ -193,12 +190,12 @@ public sealed class Plugin : IDalamudPlugin
             catch (Exception ex) { chat.PrintError($"XIV Doctor: could not clear the notes ({ex.Message})."); return; }
             notesSeen = 0;
             chat.Print("XIV Doctor: notes cleared.");
-            diag?.Write("/overlays ack");
+            diag?.Write("/doctor ack");
             return;
         }
         var (iinact, browsingway) = Probe();
         chat.Print($"XIV Doctor: {Doctor.Summary(iinact, browsingway)}.");
-        diag?.Write($"/overlays {args.Trim()}: {Doctor.Summary(iinact, browsingway)}");
+        diag?.Write($"/doctor {args.Trim()}: {Doctor.Summary(iinact, browsingway)}");
         if (args.Trim() != "fix")
             return;
 

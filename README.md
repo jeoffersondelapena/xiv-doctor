@@ -1,12 +1,13 @@
 # XIV Doctor
 
-Renamed from Overlay Doctor on 2026-09-29: it now fronts the overlays, the Mac-side watchers' notes and a fix command, so the old name had grown too narrow. `/overlays` still works as an alias of `/doctor`.
+Renamed from Overlay Doctor on 2026-09-29: it now fronts the overlays, the Mac-side watchers' notes and a fix command, so the old name had grown too narrow. The command is `/doctor`.
 
-One in-game command that brings the ACT overlay stack back: `/overlays fix`.
+One in-game command that brings the ACT overlay stack back and relays the Mac's notes: `/doctor`.
 
 ```
-/overlays          how the IINACT parser and the Browsingway renderer are right now
-/overlays fix      restart whichever layer is unwell, or load a plugin that is missing
+/doctor            how the IINACT parser and the Browsingway renderer are right now
+/doctor fix        restart whichever layer is unwell, or load a plugin that is missing
+/doctor ack        clear the watchers' notes
 ```
 
 It is a Dalamud plugin that depends on nothing but Dalamud, so it still exists when IINACT or
