@@ -5,6 +5,7 @@ public static class LoginReport
     public const double HealthWaitSeconds = 90;
     public const double SettleAfterZoneSeconds = 5;
     public const double SettleCapSeconds = 45;
+    public const double QuietChatSeconds = 5;
     public const int ReminderMinutes = 30;
     public const string DefaultInstruction = "Paste this line to your assistant.";
     // the exact wording is personal and lives in instruction.txt beside the config, not in the repo
@@ -17,11 +18,12 @@ public static class LoginReport
     public static string Reminder(IReadOnlyList<string> attention)
         => "XIV Doctor: attention, still open. " + string.Join(" ", attention.Select(p => p.TrimEnd('.') + ".")) + " " + Instruction;
 
-    /// <summary>Print once both layers answered (or the wait ran out) and the zone's own login lines have landed.</summary>
-    public static bool ReadyToPrint(double sinceLogin, double? sinceZone, bool bothHealthy)
+    /// <summary>Print once both layers answered (or the wait ran out) and the login flood has gone quiet, so the line lands last.</summary>
+    public static bool ReadyToPrint(double sinceLogin, double? sinceZone, double? sinceChat, bool bothHealthy)
     {
         var healthSettled = bothHealthy || sinceLogin >= HealthWaitSeconds;
-        var linesSettled = (sinceZone is >= SettleAfterZoneSeconds) || sinceLogin >= SettleCapSeconds;
+        var chatQuiet = sinceChat is null || sinceChat >= QuietChatSeconds;
+        var linesSettled = (sinceZone is >= SettleAfterZoneSeconds && chatQuiet) || sinceLogin >= SettleCapSeconds;
         return healthSettled && linesSettled;
     }
 

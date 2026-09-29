@@ -9,22 +9,31 @@ public class LoginReportTests
     [Fact]
     public void Prints_after_the_zone_lines_settled_and_both_answered()
     {
-        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 6, bothHealthy: true));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 6, sinceChat: 10, bothHealthy: true));
     }
 
     [Fact]
     public void Holds_while_the_zone_lines_are_still_arriving()
     {
-        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 2, bothHealthy: true));
-        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: null, bothHealthy: true));
+        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 2, sinceChat: 10, bothHealthy: true));
+        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: null, sinceChat: 10, bothHealthy: true));
+    }
+
+    [Fact]
+    public void Holds_while_chat_is_still_flowing_but_not_past_the_cap()
+    {
+        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 8, sinceChat: 1, bothHealthy: true));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 8, sinceChat: 6, bothHealthy: true));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 12, sinceZone: 8, sinceChat: null, bothHealthy: true));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 46, sinceZone: 8, sinceChat: 1, bothHealthy: true));
     }
 
     [Fact]
     public void Holds_for_a_slow_layer_but_not_forever()
     {
-        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 30, sinceZone: 10, bothHealthy: false));
-        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 91, sinceZone: 10, bothHealthy: false));
-        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 46, sinceZone: null, bothHealthy: true));
+        Assert.False(LoginReport.ReadyToPrint(sinceLogin: 30, sinceZone: 10, sinceChat: 10, bothHealthy: false));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 91, sinceZone: 10, sinceChat: 10, bothHealthy: false));
+        Assert.True(LoginReport.ReadyToPrint(sinceLogin: 46, sinceZone: null, sinceChat: 10, bothHealthy: true));
     }
 
     [Fact]

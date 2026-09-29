@@ -2,6 +2,7 @@ using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using Dalamud.Plugin.Ipc.Exceptions;
+using Dalamud.Game.Chat;
 using Dalamud.Plugin.Services;
 
 namespace XIVDoctor;
@@ -19,6 +20,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly IClientState clientState;
     private DateTime? loginAt;
     private DateTime? zoneAfterLoginAt;
+    private DateTime? lastChatAt;
 
     private readonly ICallGateSubscriber<bool> iinactHealthy;
     private readonly ICallGateSubscriber<string> iinactStatus;
@@ -56,6 +58,7 @@ public sealed class Plugin : IDalamudPlugin
 
         clientState.Login += OnLogin;
         clientState.TerritoryChanged += OnTerritoryChanged;
+        chat.ChatMessage += OnChatMessage;
         framework.Update += OnUpdate;
 
         commands.AddHandler(Command, new CommandInfo(OnCommand)
@@ -67,6 +70,7 @@ public sealed class Plugin : IDalamudPlugin
     public void Dispose()
     {
         clientState.Login -= OnLogin;
+        chat.ChatMessage -= OnChatMessage;
         clientState.TerritoryChanged -= OnTerritoryChanged;
         framework.Update -= OnUpdate;
         commands.RemoveHandler(Command);
@@ -77,10 +81,14 @@ public sealed class Plugin : IDalamudPlugin
     private void OnLogin()
     {
         loginAt = DateTime.UtcNow;
+        lastChatAt = null;
         // The zone usually loads a moment before Dalamud raises Login; count that load as the zone event.
         zoneAfterLoginAt = clientState.TerritoryType != 0 ? DateTime.UtcNow : null;
         Task.Run(LoginCheck);
     }
+
+    // every line counts, whoever printed it: the report waits for the flood to stop, not for a particular plugin
+    private void OnChatMessage(IHandleableChatMessage message) => lastChatAt = DateTime.UtcNow;
 
     private void OnTerritoryChanged(uint territory)
     {
@@ -99,7 +107,8 @@ public sealed class Plugin : IDalamudPlugin
             var both = reports.iinact.Loaded && reports.iinact.Healthy && reports.browsingway.Loaded && reports.browsingway.Healthy;
             var sinceLogin = (DateTime.UtcNow - started).TotalSeconds;
             double? sinceZone = zoneAfterLoginAt is { } z ? (DateTime.UtcNow - z).TotalSeconds : null;
-            if (LoginReport.ReadyToPrint(sinceLogin, sinceZone, both))
+            double? sinceChat = lastChatAt is { } c ? (DateTime.UtcNow - c).TotalSeconds : null;
+            if (LoginReport.ReadyToPrint(sinceLogin, sinceZone, sinceChat, both))
                 break;
             await Task.Delay(1000);
         }
