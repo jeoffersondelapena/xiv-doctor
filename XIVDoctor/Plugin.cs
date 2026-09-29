@@ -124,9 +124,50 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     // once a minute: a file read per frame would be waste
+    private readonly ReloadWatch reloadWatch = new();
+    private DateTime lastReloadPoll = DateTime.MinValue;
+    private int reloading;
+
+    // dev plugins listed in reload.txt (one internal name per line; Codex when the file is missing) reload on a rebuild
+    private void PollRebuilds(DateTime now)
+    {
+        if ((now - lastReloadPoll).TotalSeconds < ReloadWatch.PollSeconds || reloading != 0) return;
+        lastReloadPoll = now;
+        var stamps = new List<(string, DateTime)>();
+        foreach (var name in WatchedPlugins())
+        {
+            try
+            {
+                var dll = PluginControl.DllPath(pluginInterface, name);
+                if (dll != null && File.Exists(dll)) stamps.Add((name, File.GetLastWriteTimeUtc(dll)));
+            }
+            catch (Exception ex) { log.Warning($"XIV Doctor: could not look at {name}: {ex.Message}"); }
+        }
+        foreach (var name in reloadWatch.Changed(stamps, now))
+        {
+            chat.Print($"XIV Doctor: {name} was rebuilt; reloading it.");
+            reloading++;
+            var plugin = name;
+            Task.Run(async () =>
+            {
+                try { var did = await PluginControl.Load(pluginInterface, plugin); log.Information($"XIV Doctor: {plugin} {did}"); }
+                catch (Exception ex) { await framework.RunOnFrameworkThread(() => chat.PrintError($"XIV Doctor: {plugin} did not reload ({ex.Message}).")); }
+                finally { Interlocked.Decrement(ref reloading); }
+            });
+        }
+    }
+
+    private IEnumerable<string> WatchedPlugins()
+    {
+        var path = Path.Combine(pluginInterface.ConfigDirectory.FullName, "reload.txt");
+        if (!File.Exists(path)) return new[] { "Codex" };
+        return File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#'));
+    }
+
     private void OnUpdate(IFramework _)
     {
         var now = DateTime.UtcNow;
+        if (clientState.IsLoggedIn) PollRebuilds(now);
         if ((now - lastReminderCheck).TotalSeconds < 60 || loginAt is not null || !clientState.IsLoggedIn)
             return;
         lastReminderCheck = now;

@@ -86,4 +86,16 @@ public class LoginReportTests
         Assert.True(LoginReport.ReminderDue(t0, t0.AddMinutes(30), anyNotes: true));
         Assert.False(LoginReport.ReminderDue(null, t0, anyNotes: false));
     }
+
+    [Fact]
+    public void A_rebuilt_dll_reloads_once_it_has_settled_and_only_once()
+    {
+        var w = new ReloadWatch();
+        var t0 = new DateTime(2026, 9, 29, 12, 0, 0, DateTimeKind.Utc);
+        Assert.Empty(w.Changed(new[] { ("Codex", t0) }, t0.AddSeconds(10)));
+        var built = t0.AddMinutes(1);
+        Assert.Empty(w.Changed(new[] { ("Codex", built) }, built.AddSeconds(1)));
+        Assert.Equal(new[] { "Codex" }, w.Changed(new[] { ("Codex", built) }, built.AddSeconds(5)));
+        Assert.Empty(w.Changed(new[] { ("Codex", built) }, built.AddSeconds(10)));
+    }
 }

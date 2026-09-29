@@ -11,6 +11,7 @@
 		<!-- Compiled from the plugin's own source so the tests exercise the shipped code. The plugin
 		     targets net10.0-windows and cannot be referenced as an assembly on a Mac. -->
 		<Compile Include="..\XIVDoctor\Doctor.cs" Link="Doctor.cs" />
+		<Compile Include="..\XIVDoctor\ReloadWatch.cs" Link="ReloadWatch.cs" />
 		<Compile Include="..\XIVDoctor\DiagLog.cs" Link="DiagLog.cs" />
 		<Compile Include="..\XIVDoctor\LoginReport.cs" Link="LoginReport.cs" />
 	</ItemGroup>

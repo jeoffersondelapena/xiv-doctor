@@ -51,6 +51,15 @@ internal static class PluginControl
         return parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType) : null;
     }
 
+    /// <summary>The DLL a dev plugin was loaded from, or null when it is not a dev plugin or not installed.</summary>
+    public static string? DllPath(IDalamudPluginInterface pluginInterface, string internalName)
+    {
+        if (Find(pluginInterface, internalName) is not var (plugin, type)) return null;
+        var isDev = type.GetProperty("IsDev", Any)?.GetValue(plugin) as bool? ?? false;
+        if (!isDev) return null;
+        return (type.GetProperty("DllFile", Any)?.GetValue(plugin) as FileInfo)?.FullName;
+    }
+
     private static (object plugin, Type type)? Find(IDalamudPluginInterface pluginInterface, string internalName)
     {
         var dalamud = pluginInterface.GetType().Assembly;
