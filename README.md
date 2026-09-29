@@ -7,7 +7,6 @@ One in-game command that brings the ACT overlay stack back and relays the Mac's 
 ```
 /doctor            how the IINACT parser and the Browsingway renderer are right now
 /doctor fix        restart whichever layer is unwell, or load a plugin that is missing
-/doctor ack        clear the watchers' notes
 ```
 
 It is a Dalamud plugin that depends on nothing but Dalamud, so it still exists when IINACT or
