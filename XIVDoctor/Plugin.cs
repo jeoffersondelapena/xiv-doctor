@@ -128,7 +128,7 @@ public sealed class Plugin : IDalamudPlugin
     private DateTime lastReloadPoll = DateTime.MinValue;
     private int reloading;
 
-    // dev plugins listed in reload.txt (one internal name per line; Codex when the file is missing) reload on a rebuild
+    // dev plugins listed in reload.txt (one internal name per line; none when the file is missing) reload on a rebuild
     private void PollRebuilds(DateTime now)
     {
         if ((now - lastReloadPoll).TotalSeconds < ReloadWatch.PollSeconds || reloading != 0) return;
@@ -165,7 +165,7 @@ public sealed class Plugin : IDalamudPlugin
     private IEnumerable<string> WatchedPlugins()
     {
         var path = Path.Combine(pluginInterface.ConfigDirectory.FullName, "reload.txt");
-        if (!File.Exists(path)) return new[] { "Codex" };
+        if (!File.Exists(path)) return Array.Empty<string>();
         return File.ReadAllLines(path).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#'));
     }
 
