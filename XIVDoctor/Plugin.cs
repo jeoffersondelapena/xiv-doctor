@@ -150,7 +150,12 @@ public sealed class Plugin : IDalamudPlugin
             var plugin = name;
             Task.Run(async () =>
             {
-                try { var did = await PluginControl.Load(pluginInterface, plugin); log.Information($"XIV Doctor: {plugin} {did}"); }
+                try
+                {
+                    var did = await PluginControl.Load(pluginInterface, plugin);
+                    log.Information($"XIV Doctor: {plugin} {did}");
+                    await framework.RunOnFrameworkThread(() => chat.Print($"XIV Doctor: {plugin} {did}."));
+                }
                 catch (Exception ex) { await framework.RunOnFrameworkThread(() => chat.PrintError($"XIV Doctor: {plugin} did not reload ({ex.Message}).")); }
                 finally { Interlocked.Decrement(ref reloading); }
             });
