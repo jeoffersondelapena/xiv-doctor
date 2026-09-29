@@ -1,4 +1,6 @@
-# Overlay Doctor
+# XIV Doctor
+
+Renamed from Overlay Doctor on 2026-09-29: it now fronts the overlays, the Mac-side watchers' notes and a fix command, so the old name had grown too narrow. `/overlays` still works as an alias of `/doctor`.
 
 One in-game command that brings the ACT overlay stack back: `/overlays fix`.
 
@@ -14,13 +16,15 @@ plugins) and reaches for Dalamud's plugin manager only to load a plugin that is 
 
 | File | What it is |
 |---|---|
-| `OverlayDoctor/Doctor.cs` | the decision: which steps, in which order (pure, tested) |
-| `OverlayDoctor/PluginControl.cs` | load or reload another plugin through Dalamud's internals |
-| `OverlayDoctor/Plugin.cs` | the command, the IPC calls, the chat lines |
-| `OverlayDoctor.Tests/` | xunit; runs before every commit once the hook is enabled |
+| `XIVDoctor/Doctor.cs` | the decision: which steps, in which order (pure, tested) |
+| `XIVDoctor/PluginControl.cs` | load or reload another plugin through Dalamud's internals |
+| `XIVDoctor/Plugin.cs` | the command, the IPC calls, the chat lines |
+| `XIVDoctor.Tests/` | xunit; runs before every commit once the hook is enabled |
 
 The IPC names above are a contract with the two forks (`iinact-fork`, `browsingway-fork`): change them in all
 three places or not at all.
 
-Build: `dotnet build OverlayDoctor -c Release` (needs a Dalamud dev install; on macOS XIV on Mac's).
+Build: `dotnet build XIVDoctor -c Release` (needs a Dalamud dev install; on macOS XIV on Mac's).
 The first build enables the versioned pre-commit hook (`git config core.hooksPath .githooks`).
+
+A standing note ends with an instruction sentence. The default is neutral; put your own wording on the first line of `instruction.txt` in the plugin's config folder and it is used instead.

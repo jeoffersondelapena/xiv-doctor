@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace OverlayDoctor;
+namespace XIVDoctor;
 
 // Two clients share dalamud.log; the one that loses that file keeps no record.
 public sealed class DiagLog : IDisposable

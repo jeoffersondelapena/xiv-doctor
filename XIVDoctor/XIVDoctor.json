@@ -1,0 +1,14 @@
+{
+    "Name": "XIV Doctor",
+    "Author": "jeoffersondelapena",
+    "Punchline": "Keeps the overlays up and reads out the Mac's notes.",
+    "Description": "Asks IINACT and Browsingway how they are, restarts whichever layer is unwell, loads either plugin if it is missing, and relays the notes the Mac-side watchers leave, at login and every half hour until cleared. /doctor status, fix, ack.",
+    "InternalName": "XIVDoctor",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "overlay",
+        "act",
+        "iinact",
+        "browsingway"
+    ]
+}

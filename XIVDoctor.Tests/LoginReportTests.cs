@@ -1,4 +1,4 @@
-using OverlayDoctor;
+using XIVDoctor;
 using Xunit;
 
 public class LoginReportTests
@@ -30,14 +30,14 @@ public class LoginReportTests
     [Fact]
     public void All_good_names_the_port()
     {
-        Assert.Equal("Overlay Doctor: all good; parser healthy, overlays ready on port 10501.", LoginReport.Line(Parser, Fine, new List<string>()));
+        Assert.Equal("XIV Doctor: all good; parser healthy, overlays ready on port 10501.", LoginReport.Line(Parser, Fine, new List<string>()));
     }
 
     [Fact]
     public void Trouble_names_the_layer_and_the_fix()
     {
         var line = LoginReport.Line(new Report(true, false, "stalled"), Fine, new List<string>());
-        Assert.StartsWith("Overlay Doctor: attention.", line);
+        Assert.StartsWith("XIV Doctor: attention.", line);
         Assert.Contains("IINACT unwell", line);
         Assert.Contains("/overlays fix", line);
         Assert.Contains("IINACT not loaded", LoginReport.Line(Report.Absent("not loaded"), Fine, new List<string>()));
@@ -55,8 +55,26 @@ public class LoginReportTests
     public void Notes_left_for_the_player_are_appended_even_when_all_is_well()
     {
         var line = LoginReport.Line(Parser, Fine, new List<string> { "IINACT: upstream sync needs a hand (run 42 failed)" });
-        Assert.StartsWith("Overlay Doctor: attention.", line);
+        Assert.StartsWith("XIV Doctor: attention.", line);
         Assert.Contains("run 42 failed", line);
         Assert.DoesNotContain("/overlays fix", line);
+    }
+
+    [Fact]
+    public void A_standing_note_ends_with_the_one_instruction_and_is_repeated_every_half_hour()
+    {
+        var notes = new List<string> { "GatherBuddyReborn: upstream sync needs a hand (workflow run 12 failure)" };
+        var line = LoginReport.Line(Parser, Fine, notes);
+        Assert.StartsWith("XIV Doctor: attention. ", line);
+        Assert.EndsWith(LoginReport.Instruction, line);
+        Assert.Equal("Paste this line to your assistant.", LoginReport.DefaultInstruction);
+        Assert.DoesNotContain(LoginReport.Instruction, LoginReport.Line(Parser, Fine, new List<string>()));
+        Assert.Equal("XIV Doctor: attention, still open. GatherBuddyReborn: upstream sync needs a hand (workflow run 12 failure). " + LoginReport.Instruction,
+                     LoginReport.Reminder(notes));
+        var t0 = new DateTime(2026, 9, 29, 10, 0, 0, DateTimeKind.Utc);
+        Assert.True(LoginReport.ReminderDue(null, t0, anyNotes: true));
+        Assert.False(LoginReport.ReminderDue(t0, t0.AddMinutes(29), anyNotes: true));
+        Assert.True(LoginReport.ReminderDue(t0, t0.AddMinutes(30), anyNotes: true));
+        Assert.False(LoginReport.ReminderDue(null, t0, anyNotes: false));
     }
 }

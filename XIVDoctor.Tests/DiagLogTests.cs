@@ -1,4 +1,4 @@
-using OverlayDoctor;
+using XIVDoctor;
 using Xunit;
 
 public class DiagLogTests

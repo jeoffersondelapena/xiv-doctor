@@ -1,7 +1,7 @@
 using System.Reflection;
 using Dalamud.Plugin;
 
-namespace OverlayDoctor;
+namespace XIVDoctor;
 
 // Dalamud has no public API to load or reload another plugin; this walks the same internals ECommons relies on.
 internal static class PluginControl

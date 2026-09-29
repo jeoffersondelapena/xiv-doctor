@@ -4,12 +4,13 @@ using Dalamud.Plugin.Ipc;
 using Dalamud.Plugin.Ipc.Exceptions;
 using Dalamud.Plugin.Services;
 
-namespace OverlayDoctor;
+namespace XIVDoctor;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    private const string Command = "/overlays";
-    private const string Reason = "requested by Overlay Doctor";
+    private const string Command = "/doctor";
+    private const string OldCommand = "/overlays";
+    private const string Reason = "requested by XIV Doctor";
 
     private readonly IDalamudPluginInterface pluginInterface;
     private readonly ICommandManager commands;
@@ -29,6 +30,10 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly DiagLog? diag;
     private int busy;
+    private DateTime? reminderShownAt;
+    private DateTime lastReminderCheck = DateTime.MinValue;
+    private int notesSeen = -1;
+    private string lastNotes = "";
 
     public Plugin(IDalamudPluginInterface pluginInterface, ICommandManager commands, IChatGui chat, IPluginLog log, IFramework framework, IClientState clientState)
     {
@@ -47,22 +52,27 @@ public sealed class Plugin : IDalamudPlugin
         browsingwayRestart = pluginInterface.GetIpcSubscriber<string, bool>("Browsingway.Restart");
 
         diag = OpenDiagLog();
-        diag?.Write($"Overlay Doctor {typeof(Plugin).Assembly.GetName().Version} loaded, pid {Environment.ProcessId}");
+        LoginReport.Instruction = ReadInstruction();
+        diag?.Write($"XIV Doctor {typeof(Plugin).Assembly.GetName().Version} loaded, pid {Environment.ProcessId}");
 
         clientState.Login += OnLogin;
         clientState.TerritoryChanged += OnTerritoryChanged;
+        framework.Update += OnUpdate;
 
         commands.AddHandler(Command, new CommandInfo(OnCommand)
         {
-            HelpMessage = "status: how the parser and the renderer are; fix: restart or load whatever is unwell",
+            HelpMessage = "status: how the parser and the renderer are; fix: restart or load whatever is unwell; ack: clear the watchers' notes",
         });
+        commands.AddHandler(OldCommand, new CommandInfo(OnCommand) { HelpMessage = "the old name of /doctor", ShowInHelp = false });
     }
 
     public void Dispose()
     {
         clientState.Login -= OnLogin;
         clientState.TerritoryChanged -= OnTerritoryChanged;
+        framework.Update -= OnUpdate;
         commands.RemoveHandler(Command);
+        commands.RemoveHandler(OldCommand);
         diag?.Write("unloading");
         diag?.Dispose();
     }
@@ -97,17 +107,59 @@ public sealed class Plugin : IDalamudPlugin
             await Task.Delay(1000);
         }
         var waitedOut = (DateTime.UtcNow - started).TotalSeconds >= LoginReport.HealthWaitSeconds;
-        var line = LoginReport.Line(reports.iinact, reports.browsingway, ReadAttention(), waitedOut);
+        var attention = ReadAttention();
+        var line = LoginReport.Line(reports.iinact, reports.browsingway, attention, waitedOut);
         diag?.Write("login: " + line);
         chat.Print(line);
+        reminderShownAt = DateTime.UtcNow;
+        notesSeen = attention.Count;
+        lastNotes = string.Join("\n", attention);
         loginAt = null;
+    }
+
+    // once a minute: a file read per frame would be waste
+    private void OnUpdate(IFramework _)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - lastReminderCheck).TotalSeconds < 60 || loginAt is not null || !clientState.IsLoggedIn)
+            return;
+        lastReminderCheck = now;
+        var attention = ReadAttention();
+        var text = string.Join("\n", attention);
+        if (notesSeen > 0 && attention.Count == 0)
+            chat.Print("XIV Doctor: attention cleared.");
+        notesSeen = attention.Count;
+        // a new or changed note goes out at once; an unchanged one every half hour
+        if (attention.Count > 0 && (text != lastNotes || LoginReport.ReminderDue(reminderShownAt, now, true)))
+        {
+            chat.Print(LoginReport.Reminder(attention));
+            reminderShownAt = now;
+        }
+        lastNotes = text;
+    }
+
+    private string AttentionPath => Path.Combine(pluginInterface.ConfigDirectory.FullName, "attention.txt");
+
+    private string ReadInstruction()
+    {
+        try
+        {
+            var path = Path.Combine(pluginInterface.ConfigDirectory.FullName, "instruction.txt");
+            var line = File.Exists(path) ? File.ReadLines(path).FirstOrDefault(l => l.Trim().Length > 0)?.Trim() : null;
+            return string.IsNullOrEmpty(line) ? LoginReport.DefaultInstruction : line;
+        }
+        catch (Exception ex)
+        {
+            log.Warning(ex, "instruction file unreadable");
+            return LoginReport.DefaultInstruction;
+        }
     }
 
     private IReadOnlyList<string> ReadAttention()
     {
         try
         {
-            var path = Path.Combine(pluginInterface.ConfigDirectory.FullName, "attention.txt");
+            var path = AttentionPath;
             return File.Exists(path) ? File.ReadAllLines(path).Where(l => l.Trim().Length > 0).ToList() : new List<string>();
         }
         catch (Exception ex)
@@ -135,18 +187,27 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
+        if (args.Trim() == "ack")
+        {
+            try { if (File.Exists(AttentionPath)) File.Delete(AttentionPath); }
+            catch (Exception ex) { chat.PrintError($"XIV Doctor: could not clear the notes ({ex.Message})."); return; }
+            notesSeen = 0;
+            chat.Print("XIV Doctor: notes cleared.");
+            diag?.Write("/overlays ack");
+            return;
+        }
         var (iinact, browsingway) = Probe();
-        chat.Print($"Overlay Doctor: {Doctor.Summary(iinact, browsingway)}.");
+        chat.Print($"XIV Doctor: {Doctor.Summary(iinact, browsingway)}.");
         diag?.Write($"/overlays {args.Trim()}: {Doctor.Summary(iinact, browsingway)}");
         if (args.Trim() != "fix")
             return;
 
         var plan = Doctor.Plan(iinact, browsingway);
-        chat.Print("Overlay Doctor: " + string.Join(", ", plan.Select(Doctor.Describe)) + ".");
+        chat.Print("XIV Doctor: " + string.Join(", ", plan.Select(Doctor.Describe)) + ".");
         diag?.Write("plan: " + string.Join(", ", plan.Select(Doctor.Describe)));
         if (Interlocked.Exchange(ref busy, 1) != 0)
         {
-            chat.PrintError("Overlay Doctor: a fix is already running.");
+            chat.PrintError("XIV Doctor: a fix is already running.");
             return;
         }
         Task.Run(async () =>
@@ -172,7 +233,7 @@ public sealed class Plugin : IDalamudPlugin
             {
                 log.Error(ex, "fix failed");
                 diag?.Write($"fix FAILED: {ex.GetType().Name}: {ex.Message}");
-                chat.PrintError($"Overlay Doctor: {ex.Message}. Fall back to /xldisableplugintemp and /xlenableplugintemp for that plugin.");
+                chat.PrintError($"XIV Doctor: {ex.Message}. Fall back to /xldisableplugintemp and /xlenableplugintemp for that plugin.");
             }
             finally
             {
@@ -192,7 +253,7 @@ public sealed class Plugin : IDalamudPlugin
             var parserOk = !watchParser || await framework.RunOnFrameworkThread(() => Healthy(iinactHealthy));
             var rendererOk = !watchRenderer || await framework.RunOnFrameworkThread(() => Healthy(browsingwayHealthy));
             if (parserOk && rendererOk)
-                return "Overlay Doctor: done; everything reports healthy.";
+                return "XIV Doctor: done; everything reports healthy.";
             await Task.Delay(500);
         }
         var stuck = new List<string>();
@@ -200,7 +261,7 @@ public sealed class Plugin : IDalamudPlugin
             stuck.Add("IINACT");
         if (watchRenderer && !await framework.RunOnFrameworkThread(() => Healthy(browsingwayHealthy)))
             stuck.Add("Browsingway");
-        return $"Overlay Doctor: done, but {string.Join(" and ", stuck)} has not reported healthy after 45 s; "
+        return $"XIV Doctor: done, but {string.Join(" and ", stuck)} has not reported healthy after 45 s; "
                + "use /xldisableplugintemp then /xlenableplugintemp on it.";
     }
 
@@ -229,18 +290,18 @@ public sealed class Plugin : IDalamudPlugin
         switch (step)
         {
             case Step.LoadIinact:
-                chat.Print($"Overlay Doctor: IINACT {await PluginControl.Load(pluginInterface, "IINACT")}.");
+                chat.Print($"XIV Doctor: IINACT {await PluginControl.Load(pluginInterface, "IINACT")}.");
                 break;
             case Step.RestartParser:
                 if (!iinactRestart.InvokeFunc(Reason))
-                    chat.PrintError("Overlay Doctor: IINACT declined the restart (one is already running).");
+                    chat.PrintError("XIV Doctor: IINACT declined the restart (one is already running).");
                 break;
             case Step.LoadBrowsingway:
-                chat.Print($"Overlay Doctor: Browsingway {await PluginControl.Load(pluginInterface, "Browsingway")}.");
+                chat.Print($"XIV Doctor: Browsingway {await PluginControl.Load(pluginInterface, "Browsingway")}.");
                 break;
             case Step.RestartRenderer:
                 if (!browsingwayRestart.InvokeFunc(Reason))
-                    chat.PrintError("Overlay Doctor: Browsingway could not restart its renderer.");
+                    chat.PrintError("XIV Doctor: Browsingway could not restart its renderer.");
                 break;
         }
     }

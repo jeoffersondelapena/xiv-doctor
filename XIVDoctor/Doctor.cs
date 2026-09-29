@@ -1,4 +1,4 @@
-namespace OverlayDoctor;
+namespace XIVDoctor;
 
 public enum Step
 {
