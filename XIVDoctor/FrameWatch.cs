@@ -10,6 +10,8 @@ public sealed class FrameWatch : IDisposable
     private readonly Action<string> write;
     private long lastFrame = Environment.TickCount64;
     private long reportedAt;
+    private long longestGap;
+    private long longestEndedAt;
 
     public FrameWatch(Action<string> write)
     {
@@ -17,7 +19,25 @@ public sealed class FrameWatch : IDisposable
         timer = new Timer(_ => Check(Environment.TickCount64), null, 1000, 1000);
     }
 
-    public void Tick() => Volatile.Write(ref lastFrame, Environment.TickCount64);
+    public void Tick()
+    {
+        var now = Environment.TickCount64;
+        var gap = now - lastFrame;
+        if (gap > longestGap)
+        {
+            longestGap = gap;
+            longestEndedAt = now;
+        }
+        Volatile.Write(ref lastFrame, now);
+    }
+
+    /// <summary>The longest wait between two frames since the last call and how long ago it ended, both in milliseconds. Frame thread only.</summary>
+    public (long Milliseconds, long EndedAgo) TakeLongest()
+    {
+        var result = (longestGap, longestGap == 0 ? 0 : Environment.TickCount64 - longestEndedAt);
+        longestGap = 0;
+        return result;
+    }
 
     /// <summary>The line due at <paramref name="now"/> (milliseconds), or null. <paramref name="reportedAt"/> is 0 outside a reported stall.</summary>
     public static string? Verdict(long now, long lastFrame, long reportedAt, string facts)

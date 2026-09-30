@@ -40,8 +40,9 @@ public sealed class DiagLog : IDisposable
     public static bool MemoryDue(DateTime? last, DateTime now) => last is null || (now - last.Value).TotalSeconds >= MemorySeconds;
 
     // read beside the Mac's own figures for the window: a managed heap that stays small clears the plugins' own objects
-    public static string MemoryLine(long managedBytes, long committedBytes, long processBytes, int players, uint territory) =>
-        $"memory: managed {Mb(managedBytes)} MB, committed {Mb(committedBytes)} MB, process {Mb(processBytes)} MB; players {players}; territory {territory}";
+    public static string MemoryLine(long managedBytes, long committedBytes, long processBytes, int players, uint territory, long longestFrameMs, DateTime longestFrameAt) =>
+        $"memory: managed {Mb(managedBytes)} MB, committed {Mb(committedBytes)} MB, process {Mb(processBytes)} MB; players {players}; territory {territory}"
+        + $"; longest frame {longestFrameMs} ms at {longestFrameAt:HH:mm:ss.f}";
 
     private static long Mb(long bytes) => bytes / (1024 * 1024);
 

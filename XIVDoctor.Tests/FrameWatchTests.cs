@@ -24,6 +24,22 @@ public class FrameWatchTests
     }
 
     [Fact]
+    public void The_longest_wait_between_frames_is_kept_until_it_is_taken()
+    {
+        using var watch = new FrameWatch(_ => { });
+        watch.Tick();
+        watch.TakeLongest();
+        Thread.Sleep(120);
+        watch.Tick();
+        Thread.Sleep(20);
+        watch.Tick();
+        var (longest, endedAgo) = watch.TakeLongest();
+        Assert.InRange(longest, 100, 400);
+        Assert.InRange(endedAgo, 10, 300);
+        Assert.Equal((0L, 0L), watch.TakeLongest());
+    }
+
+    [Fact]
     public void The_end_of_a_reported_stall_is_said_once()
     {
         Assert.Equal("frame loop resumed", FrameWatch.Verdict(now: 40_000, lastFrame: 39_500, reportedAt: 25_000, facts: "f"));
