@@ -78,8 +78,14 @@ public sealed class Plugin : IDalamudPlugin
         framework.Update -= OnUpdate;
         commands.RemoveHandler(Command);
         frameWatch?.Dispose();
-        diag?.Write("unloading");
+        diag?.Write(DiagLog.UnloadingLine(GameClosing()));
         diag?.Dispose();
+    }
+
+    private bool GameClosing()
+    {
+        try { return framework.IsFrameworkUnloading; }
+        catch (Exception) { return false; }
     }
 
     private void OnLogin()

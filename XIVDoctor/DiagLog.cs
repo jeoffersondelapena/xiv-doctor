@@ -35,6 +35,9 @@ public sealed class DiagLog : IDisposable
 
     public static bool HeartbeatDue(DateTime? last, DateTime now) => last is null || (now - last.Value).TotalSeconds >= HeartbeatSeconds;
 
+    // the watcher ends a process that outlives "game closing" by two minutes, never one that only says "unloading"
+    public static string UnloadingLine(bool gameClosing) => gameClosing ? "unloading; game closing" : "unloading";
+
     /// <summary>Files older than the retention window; names that do not carry a date are kept.</summary>
     public static IEnumerable<string> FilesToPrune(IEnumerable<string> paths, DateTime now)
     {

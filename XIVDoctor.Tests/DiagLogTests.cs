@@ -33,6 +33,15 @@ public class DiagLogTests
     }
 
     [Fact]
+    public void The_last_line_tells_a_closing_game_from_a_plugin_switched_off()
+    {
+        Assert.Equal("unloading", DiagLog.UnloadingLine(false));
+        Assert.Equal("unloading; game closing", DiagLog.UnloadingLine(true));
+        // both keep the word the freeze watcher reads as "on purpose"
+        Assert.Contains("unloading", DiagLog.UnloadingLine(true));
+    }
+
+    [Fact]
     public void Writes_land_in_the_file()
     {
         var dir = Path.Combine(Path.GetTempPath(), "doctor-diag-test-" + Guid.NewGuid());
