@@ -28,7 +28,7 @@ public sealed class DiagLog : IDisposable
 
     public static string FileName(DateTime startedAt, int processId) => $"doctor-{startedAt:yyyyMMdd-HHmmss}-{processId}.log";
 
-    public const int HeartbeatSeconds = 60;
+    public const int HeartbeatSeconds = 5;
 
     // The Mac-side freeze watcher keys on this prefix: a log that stops beating while the process lives is a frozen frame loop.
     public static string HeartbeatLine(bool loggedIn, uint territory) => $"heartbeat: logged in {loggedIn}; territory {territory}";

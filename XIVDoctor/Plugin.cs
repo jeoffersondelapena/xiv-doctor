@@ -30,6 +30,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly ICallGateSubscriber<string, bool> browsingwayRestart;
 
     private readonly DiagLog? diag;
+    private readonly FrameWatch? frameWatch;
     private int busy;
     private DateTime? reminderShownAt;
     private DateTime lastReminderCheck = DateTime.MinValue;
@@ -54,6 +55,7 @@ public sealed class Plugin : IDalamudPlugin
         browsingwayRestart = pluginInterface.GetIpcSubscriber<string, bool>("Browsingway.Restart");
 
         diag = OpenDiagLog();
+        frameWatch = diag is null ? null : new FrameWatch(diag.Write);
         LoginReport.Instruction = ReadInstruction();
         diag?.Write($"XIV Doctor {typeof(Plugin).Assembly.GetName().Version} loaded, pid {Environment.ProcessId}");
 
@@ -75,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
         clientState.TerritoryChanged -= OnTerritoryChanged;
         framework.Update -= OnUpdate;
         commands.RemoveHandler(Command);
+        frameWatch?.Dispose();
         diag?.Write("unloading");
         diag?.Dispose();
     }
@@ -172,6 +175,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnUpdate(IFramework _)
     {
+        frameWatch?.Tick();
         var now = DateTime.UtcNow;
         if (DiagLog.HeartbeatDue(lastBeat, now))
         {

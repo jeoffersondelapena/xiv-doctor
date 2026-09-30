@@ -25,10 +25,10 @@ plugins) and reaches for Dalamud's plugin manager only to load a plugin that is 
 The IPC names above are a contract with the two forks (`iinact-fork`, `browsingway-fork`): change them in all
 three places or not at all.
 
-Once a minute it also writes a heartbeat line to its per-window diagnostic log (`diag/doctor-<start>-<pid>.log`
+Every five seconds it also writes a heartbeat line to its per-window diagnostic log (`diag/doctor-<start>-<pid>.log`
 in the config folder). The Mac-side freeze watcher in `xiv-mac-tools` reads that file: a log that stops beating
 while the game process lives is a frozen frame loop, and a last line of `unloading` is the plugin switched off on
-purpose. The `heartbeat:` prefix and that line are a contract with the watcher.
+purpose. The `heartbeat:` prefix and that line are a contract with the watcher. A timer thread adds `frame loop stalled Ns; …` lines while the frame loop is not ticking (with a few runtime counters, so a capture shows whether other managed threads still run) and `frame loop resumed` when it ends; the watcher reads those too.
 
 Build: `dotnet build XIVDoctor -c Release` (needs a Dalamud dev install; on macOS XIV on Mac's).
 The first build enables the versioned pre-commit hook (`git config core.hooksPath .githooks`).

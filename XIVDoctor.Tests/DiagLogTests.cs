@@ -19,11 +19,11 @@ public class DiagLogTests
     }
 
     [Fact]
-    public void A_heartbeat_is_due_at_start_and_then_once_a_minute()
+    public void A_heartbeat_is_due_at_start_and_then_every_five_seconds()
     {
         Assert.True(DiagLog.HeartbeatDue(null, Now));
-        Assert.False(DiagLog.HeartbeatDue(Now, Now.AddSeconds(59)));
-        Assert.True(DiagLog.HeartbeatDue(Now, Now.AddSeconds(60)));
+        Assert.False(DiagLog.HeartbeatDue(Now, Now.AddSeconds(4)));
+        Assert.True(DiagLog.HeartbeatDue(Now, Now.AddSeconds(5)));
     }
 
     [Fact]

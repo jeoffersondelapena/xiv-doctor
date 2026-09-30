@@ -1,0 +1,56 @@
+namespace XIVDoctor;
+
+// A frozen frame loop cannot report itself; a timer thread notices the missing ticks and says what it still can.
+public sealed class FrameWatch : IDisposable
+{
+    public const int StallSeconds = 5;
+    public const int RepeatSeconds = 10;
+
+    private readonly Timer timer;
+    private readonly Action<string> write;
+    private long lastFrame = Environment.TickCount64;
+    private long reportedAt;
+
+    public FrameWatch(Action<string> write)
+    {
+        this.write = write;
+        timer = new Timer(_ => Check(Environment.TickCount64), null, 2000, 2000);
+    }
+
+    public void Tick() => Volatile.Write(ref lastFrame, Environment.TickCount64);
+
+    /// <summary>The line due at <paramref name="now"/> (milliseconds), or null. <paramref name="reportedAt"/> is 0 outside a reported stall.</summary>
+    public static string? Verdict(long now, long lastFrame, long reportedAt, string facts)
+    {
+        var stalled = (now - lastFrame) / 1000;
+        if (stalled < StallSeconds)
+            return reportedAt != 0 ? "frame loop resumed" : null;
+        if (reportedAt != 0 && (now - reportedAt) / 1000 < RepeatSeconds)
+            return null;
+        return $"frame loop stalled {stalled}s; {facts}";
+    }
+
+    private void Check(long now)
+    {
+        try
+        {
+            var line = Verdict(now, Volatile.Read(ref lastFrame), reportedAt, Facts());
+            if (line is null) return;
+            reportedAt = line == "frame loop resumed" ? 0 : now;
+            write(line);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    // if these stop appearing during a stall, every managed thread is held, not just the frame loop
+    private static string Facts()
+    {
+        ThreadPool.GetAvailableThreads(out var free, out _);
+        ThreadPool.GetMaxThreads(out var max, out _);
+        return $"gc {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)}, pool busy {max - free}, queued {ThreadPool.PendingWorkItemCount}";
+    }
+
+    public void Dispose() => timer.Dispose();
+}
