@@ -90,10 +90,10 @@ public sealed class Plugin : IDalamudPlugin
         if (diag is null) return;
         try
         {
-            using var process = System.Diagnostics.Process.GetCurrentProcess();
             var players = objects.Count(o => o is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter);
             var (longest, endedAgo) = frameWatch?.TakeLongest() ?? (0, 0);
-            diag.Write(DiagLog.MemoryLine(GC.GetTotalMemory(false), GC.GetGCMemoryInfo().TotalCommittedBytes, process.PrivateMemorySize64, players, clientState.TerritoryType,
+            // the Process sizes ask the Wine server for every process and come back 0 on macOS; this one is read inside the process
+            diag.Write(DiagLog.MemoryLine(GC.GetTotalMemory(false), GC.GetGCMemoryInfo().TotalCommittedBytes, Environment.WorkingSet, players, clientState.TerritoryType,
                 longest, DateTime.Now.AddMilliseconds(-endedAgo)));
         }
         catch (Exception ex) { log.Warning(ex, "memory line not written"); }

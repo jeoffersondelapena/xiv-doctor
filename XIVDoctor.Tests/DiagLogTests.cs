@@ -43,7 +43,7 @@ public class DiagLogTests
     [Fact]
     public void The_memory_line_keeps_the_shape_the_watcher_reads()
     {
-        Assert.Equal("memory: managed 812 MB, committed 1490 MB, process 9800 MB; players 23; territory 131; longest frame 412 ms at 21:59:07.3",
+        Assert.Equal("memory: managed 812 MB, committed 1490 MB, resident 9800 MB; players 23; territory 131; longest frame 412 ms at 21:59:07.3",
             DiagLog.MemoryLine(812L * 1024 * 1024 + 5, 1490L * 1024 * 1024, 9800L * 1024 * 1024, 23, 131, 412, new DateTime(2026, 9, 5, 21, 59, 7, 300)));
     }
 
