@@ -33,6 +33,7 @@ public sealed class Plugin : IDalamudPlugin
     private int busy;
     private DateTime? reminderShownAt;
     private DateTime lastReminderCheck = DateTime.MinValue;
+    private DateTime? lastBeat;
     private int notesSeen = -1;
     private string lastNotes = "";
 
@@ -172,6 +173,11 @@ public sealed class Plugin : IDalamudPlugin
     private void OnUpdate(IFramework _)
     {
         var now = DateTime.UtcNow;
+        if (DiagLog.HeartbeatDue(lastBeat, now))
+        {
+            lastBeat = now;
+            diag?.Write(DiagLog.HeartbeatLine(clientState.IsLoggedIn, clientState.TerritoryType));
+        }
         if (clientState.IsLoggedIn) PollRebuilds(now);
         if ((now - lastReminderCheck).TotalSeconds < 60 || loginAt is not null || !clientState.IsLoggedIn)
             return;

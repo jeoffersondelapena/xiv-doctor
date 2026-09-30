@@ -28,6 +28,13 @@ public sealed class DiagLog : IDisposable
 
     public static string FileName(DateTime startedAt, int processId) => $"doctor-{startedAt:yyyyMMdd-HHmmss}-{processId}.log";
 
+    public const int HeartbeatSeconds = 60;
+
+    // The Mac-side freeze watcher keys on this prefix: a log that stops beating while the process lives is a frozen frame loop.
+    public static string HeartbeatLine(bool loggedIn, uint territory) => $"heartbeat: logged in {loggedIn}; territory {territory}";
+
+    public static bool HeartbeatDue(DateTime? last, DateTime now) => last is null || (now - last.Value).TotalSeconds >= HeartbeatSeconds;
+
     /// <summary>Files older than the retention window; names that do not carry a date are kept.</summary>
     public static IEnumerable<string> FilesToPrune(IEnumerable<string> paths, DateTime now)
     {

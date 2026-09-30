@@ -19,6 +19,20 @@ public class DiagLogTests
     }
 
     [Fact]
+    public void A_heartbeat_is_due_at_start_and_then_once_a_minute()
+    {
+        Assert.True(DiagLog.HeartbeatDue(null, Now));
+        Assert.False(DiagLog.HeartbeatDue(Now, Now.AddSeconds(59)));
+        Assert.True(DiagLog.HeartbeatDue(Now, Now.AddSeconds(60)));
+    }
+
+    [Fact]
+    public void The_heartbeat_line_keeps_the_prefix_the_freeze_watcher_matches()
+    {
+        Assert.Equal("heartbeat: logged in True; territory 130", DiagLog.HeartbeatLine(true, 130));
+    }
+
+    [Fact]
     public void Writes_land_in_the_file()
     {
         var dir = Path.Combine(Path.GetTempPath(), "doctor-diag-test-" + Guid.NewGuid());

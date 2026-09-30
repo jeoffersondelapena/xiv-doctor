@@ -19,10 +19,16 @@ plugins) and reaches for Dalamud's plugin manager only to load a plugin that is 
 | `XIVDoctor/Doctor.cs` | the decision: which steps, in which order (pure, tested) |
 | `XIVDoctor/PluginControl.cs` | load or reload another plugin through Dalamud's internals |
 | `XIVDoctor/Plugin.cs` | the command, the IPC calls, the chat lines |
+| `XIVDoctor/DiagLog.cs` | the per-window diagnostic log and its once-a-minute heartbeat |
 | `XIVDoctor.Tests/` | xunit; runs before every commit once the hook is enabled |
 
 The IPC names above are a contract with the two forks (`iinact-fork`, `browsingway-fork`): change them in all
 three places or not at all.
+
+Once a minute it also writes a heartbeat line to its per-window diagnostic log (`diag/doctor-<start>-<pid>.log`
+in the config folder). The Mac-side freeze watcher in `xiv-mac-tools` reads that file: a log that stops beating
+while the game process lives is a frozen frame loop, and a last line of `unloading` is the plugin switched off on
+purpose. The `heartbeat:` prefix and that line are a contract with the watcher.
 
 Build: `dotnet build XIVDoctor -c Release` (needs a Dalamud dev install; on macOS XIV on Mac's).
 The first build enables the versioned pre-commit hook (`git config core.hooksPath .githooks`).
