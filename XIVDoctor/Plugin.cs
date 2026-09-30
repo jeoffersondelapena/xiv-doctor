@@ -18,6 +18,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly IPluginLog log;
     private readonly IFramework framework;
     private readonly IClientState clientState;
+    private readonly IObjectTable objects;
+    private DateTime? lastMemory;
     private DateTime? loginAt;
     private DateTime? zoneAfterLoginAt;
     private DateTime? lastChatAt;
@@ -38,7 +40,7 @@ public sealed class Plugin : IDalamudPlugin
     private int notesSeen = -1;
     private string lastNotes = "";
 
-    public Plugin(IDalamudPluginInterface pluginInterface, ICommandManager commands, IChatGui chat, IPluginLog log, IFramework framework, IClientState clientState)
+    public Plugin(IDalamudPluginInterface pluginInterface, ICommandManager commands, IChatGui chat, IPluginLog log, IFramework framework, IClientState clientState, IObjectTable objects)
     {
         this.pluginInterface = pluginInterface;
         this.commands = commands;
@@ -46,6 +48,7 @@ public sealed class Plugin : IDalamudPlugin
         this.log = log;
         this.framework = framework;
         this.clientState = clientState;
+        this.objects = objects;
 
         iinactHealthy = pluginInterface.GetIpcSubscriber<bool>("IINACT.Healthy");
         iinactStatus = pluginInterface.GetIpcSubscriber<string>("IINACT.Status");
@@ -80,6 +83,18 @@ public sealed class Plugin : IDalamudPlugin
         frameWatch?.Dispose();
         diag?.Write(DiagLog.UnloadingLine(GameClosing()));
         diag?.Dispose();
+    }
+
+    private void WriteMemory()
+    {
+        if (diag is null) return;
+        try
+        {
+            using var process = System.Diagnostics.Process.GetCurrentProcess();
+            var players = objects.Count(o => o is Dalamud.Game.ClientState.Objects.SubKinds.IPlayerCharacter);
+            diag.Write(DiagLog.MemoryLine(GC.GetTotalMemory(false), GC.GetGCMemoryInfo().TotalCommittedBytes, process.PrivateMemorySize64, players, clientState.TerritoryType));
+        }
+        catch (Exception ex) { log.Warning(ex, "memory line not written"); }
     }
 
     private bool GameClosing()
@@ -187,6 +202,11 @@ public sealed class Plugin : IDalamudPlugin
         {
             lastBeat = now;
             diag?.Write(DiagLog.HeartbeatLine(clientState.IsLoggedIn, clientState.TerritoryType));
+        }
+        if (DiagLog.MemoryDue(lastMemory, now))
+        {
+            lastMemory = now;
+            WriteMemory();
         }
         if (clientState.IsLoggedIn) PollRebuilds(now);
         if ((now - lastReminderCheck).TotalSeconds < 60 || loginAt is not null || !clientState.IsLoggedIn)

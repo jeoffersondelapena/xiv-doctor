@@ -33,6 +33,21 @@ public class DiagLogTests
     }
 
     [Fact]
+    public void A_memory_line_is_due_at_start_and_then_once_a_minute()
+    {
+        Assert.True(DiagLog.MemoryDue(null, Now));
+        Assert.False(DiagLog.MemoryDue(Now, Now.AddSeconds(59)));
+        Assert.True(DiagLog.MemoryDue(Now, Now.AddSeconds(60)));
+    }
+
+    [Fact]
+    public void The_memory_line_keeps_the_shape_the_watcher_reads()
+    {
+        Assert.Equal("memory: managed 812 MB, committed 1490 MB, process 9800 MB; players 23; territory 131",
+            DiagLog.MemoryLine(812L * 1024 * 1024 + 5, 1490L * 1024 * 1024, 9800L * 1024 * 1024, 23, 131));
+    }
+
+    [Fact]
     public void The_last_line_tells_a_closing_game_from_a_plugin_switched_off()
     {
         Assert.Equal("unloading", DiagLog.UnloadingLine(false));

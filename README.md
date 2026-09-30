@@ -29,7 +29,7 @@ Every five seconds it also writes a heartbeat line to its per-window diagnostic 
 in the config folder). The Mac-side freeze watcher in `xiv-mac-tools` reads that file: a log that stops beating
 while the game process lives is a frozen frame loop, and a last line of `unloading` is the plugin switched off on
 purpose. When the game itself is closing the line is `unloading; game closing`: a process still alive two minutes
-after that has stopped closing, and the watcher ends it. The `heartbeat:` prefix and those two lines are a contract with the watcher. A timer thread adds `frame loop stalled Ns; …` lines while the frame loop is not ticking (with a few runtime counters, so a capture shows whether other managed threads still run) and `frame loop resumed` when it ends; the watcher reads those too.
+after that has stopped closing, and the watcher ends it. The `heartbeat:` prefix and those two lines are a contract with the watcher. Once a minute a `memory:` line gives the managed heap, what the runtime has committed, the process size as Windows reports it, the players in view and the territory; the watcher's memory report reads it beside the Mac's own figures for the window. A timer thread adds `frame loop stalled Ns; …` lines while the frame loop is not ticking (with a few runtime counters, so a capture shows whether other managed threads still run) and `frame loop resumed` when it ends; the watcher reads those too.
 
 Build: `dotnet build XIVDoctor -c Release` (needs a Dalamud dev install; on macOS XIV on Mac's).
 The first build enables the versioned pre-commit hook (`git config core.hooksPath .githooks`).

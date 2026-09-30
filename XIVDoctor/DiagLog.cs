@@ -35,6 +35,16 @@ public sealed class DiagLog : IDisposable
 
     public static bool HeartbeatDue(DateTime? last, DateTime now) => last is null || (now - last.Value).TotalSeconds >= HeartbeatSeconds;
 
+    public const int MemorySeconds = 60;
+
+    public static bool MemoryDue(DateTime? last, DateTime now) => last is null || (now - last.Value).TotalSeconds >= MemorySeconds;
+
+    // read beside the Mac's own figures for the window: a managed heap that stays small clears the plugins' own objects
+    public static string MemoryLine(long managedBytes, long committedBytes, long processBytes, int players, uint territory) =>
+        $"memory: managed {Mb(managedBytes)} MB, committed {Mb(committedBytes)} MB, process {Mb(processBytes)} MB; players {players}; territory {territory}";
+
+    private static long Mb(long bytes) => bytes / (1024 * 1024);
+
     // the watcher ends a process that outlives "game closing" by two minutes, never one that only says "unloading"
     public static string UnloadingLine(bool gameClosing) => gameClosing ? "unloading; game closing" : "unloading";
 
