@@ -10,16 +10,17 @@ public class FrameWatchTests
     }
 
     [Fact]
-    public void A_stall_is_reported_once_it_passes_five_seconds()
+    public void A_stall_is_reported_once_it_passes_two_seconds()
     {
-        Assert.Equal("frame loop stalled 5s; f", FrameWatch.Verdict(now: 15_000, lastFrame: 10_000, reportedAt: 0, facts: "f"));
+        Assert.Null(FrameWatch.Verdict(now: 11_900, lastFrame: 10_000, reportedAt: 0, facts: "f"));
+        Assert.Equal("frame loop stalled 2s; f", FrameWatch.Verdict(now: 12_000, lastFrame: 10_000, reportedAt: 0, facts: "f"));
     }
 
     [Fact]
-    public void A_lasting_stall_repeats_every_ten_seconds_not_every_check()
+    public void A_lasting_stall_repeats_every_three_seconds_not_every_check()
     {
-        Assert.Null(FrameWatch.Verdict(now: 17_000, lastFrame: 10_000, reportedAt: 15_000, facts: "f"));
-        Assert.Equal("frame loop stalled 15s; f", FrameWatch.Verdict(now: 25_000, lastFrame: 10_000, reportedAt: 15_000, facts: "f"));
+        Assert.Null(FrameWatch.Verdict(now: 14_000, lastFrame: 10_000, reportedAt: 12_000, facts: "f"));
+        Assert.Equal("frame loop stalled 5s; f", FrameWatch.Verdict(now: 15_000, lastFrame: 10_000, reportedAt: 12_000, facts: "f"));
     }
 
     [Fact]

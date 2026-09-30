@@ -3,8 +3,8 @@ namespace XIVDoctor;
 // A frozen frame loop cannot report itself; a timer thread notices the missing ticks and says what it still can.
 public sealed class FrameWatch : IDisposable
 {
-    public const int StallSeconds = 5;
-    public const int RepeatSeconds = 10;
+    public const int StallSeconds = 2;
+    public const int RepeatSeconds = 3;
 
     private readonly Timer timer;
     private readonly Action<string> write;
@@ -14,7 +14,7 @@ public sealed class FrameWatch : IDisposable
     public FrameWatch(Action<string> write)
     {
         this.write = write;
-        timer = new Timer(_ => Check(Environment.TickCount64), null, 2000, 2000);
+        timer = new Timer(_ => Check(Environment.TickCount64), null, 1000, 1000);
     }
 
     public void Tick() => Volatile.Write(ref lastFrame, Environment.TickCount64);
